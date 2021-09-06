@@ -5,6 +5,7 @@ EXTRA_COMPONENTS = \
 	extras/dhcpserver \
   extras/rboot-ota \
   extras/i2c \
+  extras/bh1750 \
   $(abspath ../../components/common/button) \
 	$(abspath ../../components/esp8266-open-rtos/wifi_config) \
 	$(abspath ../../components/esp8266-open-rtos/cJSON) \

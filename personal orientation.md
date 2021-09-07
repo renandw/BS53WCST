@@ -3,18 +3,18 @@ esptool.py -p /dev/ttyUSB0 --baud 115200 write_flash -fs 8m -fm dout -ff 40m 0x0
 
 
 
-openssl sha384 -binary -out firmware/smartlock.bin.sig firmware/smartlock.bin
+openssl sha384 -binary -out firmware/BS53WCST.bin.sig firmware/BS53WCST.bin
 
-printf "%08x" `cat firmware/smartlock.bin | wc -c`| xxd -r -p >>firmware/smartlock.bin.sig
-
-
+printf "%08x" `cat firmware/BS53WCST.bin | wc -c`| xxd -r -p >>firmware/BS53WCST.bin.sig
 
 
-openssl sha384 -binary -out firmware/luxsensor.bin.sig firmware/luxsensor.bin
-printf "%08x" `cat firmware/luxsensor.bin | wc -c`| xxd -r -p >>firmware/luxsensor.bin.sig
 
-cp luxsensor.bin /media/sf_Qr_Codes_-_Homekit
-cp luxsensor.bin.sig /media/sf_Qr_Codes_-_Homekit
+
+openssl sha384 -binary -out firmware/BS53WCST.bin.sig firmware/BS53WCST.bin
+printf "%08x" `cat firmware/BS53WCST.bin | wc -c`| xxd -r -p >>firmware/BS53WCST.bin.sig
+
+cp BS53WCST.bin /media/sf_Shared-Homekit-Files
+cp BS53WCST.bin.sig /media/sf_Shared-Homekit-Files
 
 
 

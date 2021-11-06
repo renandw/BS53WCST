@@ -44,7 +44,7 @@ const int relay_gpio_1 = 0;
 // The GPIO pin that is connected to RELAY#2 on the board.
 const int relay_gpio_2 = 2;
 // The GPIO pin that is connected to RELAY#3 on the board.
-const int relay_gpio_2 = 3;
+const int relay_gpio_3 = 3;
 
 //TOGGLE PINS
 #define TOGGLE_PIN_1 12
@@ -113,7 +113,7 @@ void light_identify(homekit_value_t _value) {
 
 void lightbulb_on_1_callback(homekit_characteristic_t *_ch, homekit_value_t on, void *context);
 void lightbulb_on_2_callback(homekit_characteristic_t *_ch, homekit_value_t on, void *context);
-void lightbulb_on_2_callback(homekit_characteristic_t *_ch, homekit_value_t on, void *context);
+void lightbulb_on_3_callback(homekit_characteristic_t *_ch, homekit_value_t on, void *context);
 
 
 void relay_write_1(bool on) {

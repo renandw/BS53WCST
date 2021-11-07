@@ -59,8 +59,8 @@ const int relay_gpio_3 = 3;
 
 
 //HOMEKIT CHARACTERISTIC SECTION
-homekit_characteristic_t occupancy_detected = HOMEKIT_CHARACTERISTIC_(OCCUPANCY_DETECTED, 0);
-homekit_characteristic_t occupancy_detected_2 = HOMEKIT_CHARACTERISTIC_(OCCUPANCY_DETECTED, 0);
+homekit_characteristic_t motion_detected = HOMEKIT_CHARACTERISTIC_(MOTION_DETECTED, 0);
+homekit_characteristic_t motion_detected_2 = HOMEKIT_CHARACTERISTIC_(MOTION_DETECTED, 0);
 homekit_characteristic_t lux = HOMEKIT_CHARACTERISTIC_(CURRENT_AMBIENT_LIGHT_LEVEL, 0, .min_step = (float[]) {0.01}, .min_value = (float[]) {0}, .max_value = (float[]) {100000}); //
 homekit_characteristic_t fault = HOMEKIT_CHARACTERISTIC_(STATUS_FAULT, 0);
 homekit_characteristic_t ota_trigger  = API_OTA_TRIGGER;
@@ -102,8 +102,8 @@ void reset_configuration() {
 void sensor_identify(homekit_value_t _value) {
     printf("LightSensor identify\n");
 }
-void occupancy_identify(homekit_value_t _value) {
-    printf("Occupancy identify\n");
+void motion_identify(homekit_value_t _value) {
+    printf("Motion identify\n");
 }
 void light_identify(homekit_value_t _value) {
     printf("Light identify\n");
@@ -210,13 +210,13 @@ void sensor_init() {
 //OCCUPANCY SENSOR SECTION
 
 void sensor_callback(bool high, void *context) {
-    occupancy_detected.value = HOMEKIT_UINT8(high ? 1 : 0);
-    homekit_characteristic_notify(&occupancy_detected, occupancy_detected.value);
+    motion_detected.value = HOMEKIT_BOOL(high ? 1 : 0);
+    homekit_characteristic_notify(&motion_detected, motion_detected.value);
 }
 
 void sensor_callback_2(bool high, void *context) {
-    occupancy_detected_2.value = HOMEKIT_UINT8(high ? 1 : 0);
-    homekit_characteristic_notify(&occupancy_detected_2, occupancy_detected_2.value);
+    motion_detected_2.value = HOMEKIT_BOOL(high ? 1 : 0);
+    homekit_characteristic_notify(&motion_detected_2, motion_detected_2.value);
 }
 
 
@@ -287,36 +287,36 @@ homekit_accessory_t *accessories[] = {
       }),
       NULL
   }),
-    HOMEKIT_ACCESSORY(.id=4, .category=homekit_accessory_category_sensor, .services=(homekit_service_t*[]) {
+    HOMEKIT_ACCESSORY(.id=4, .category=homekit_accessory_category_switch, .services=(homekit_service_t*[]) {
         HOMEKIT_SERVICE(ACCESSORY_INFORMATION, .characteristics=(homekit_characteristic_t*[]) {
             HOMEKIT_CHARACTERISTIC(NAME, "Occupancy Sensor_2"),
             &manufacturer,
             &serial,
             &model,
             &revision,
-            HOMEKIT_CHARACTERISTIC(IDENTIFY, occupancy_identify),
+            HOMEKIT_CHARACTERISTIC(IDENTIFY, motion_identify),
             NULL
 }),
-        HOMEKIT_SERVICE(OCCUPANCY_SENSOR, .characteristics=(homekit_characteristic_t*[]) {
+        HOMEKIT_SERVICE(MOTION_SENSOR, .characteristics=(homekit_characteristic_t*[]) {
             HOMEKIT_CHARACTERISTIC(NAME, "Occupancy Sensor_2"),
-            &occupancy_detected_2,
+            &motion_detected_2,
             NULL
       }),
       NULL
   }),
-  HOMEKIT_ACCESSORY(.id=5, .category=homekit_accessory_category_sensor, .services=(homekit_service_t*[]) {
+  HOMEKIT_ACCESSORY(.id=5, .category=homekit_accessory_category_switch, .services=(homekit_service_t*[]) {
       HOMEKIT_SERVICE(ACCESSORY_INFORMATION, .characteristics=(homekit_characteristic_t*[]) {
           HOMEKIT_CHARACTERISTIC(NAME, "Occupancy Sensor"),
           &manufacturer,
           &serial,
           &model,
           &revision,
-          HOMEKIT_CHARACTERISTIC(IDENTIFY, occupancy_identify),
+          HOMEKIT_CHARACTERISTIC(IDENTIFY, motion_identify),
           NULL
 }),
-      HOMEKIT_SERVICE(OCCUPANCY_SENSOR, .characteristics=(homekit_characteristic_t*[]) {
+      HOMEKIT_SERVICE(MOTION_SENSOR, .characteristics=(homekit_characteristic_t*[]) {
           HOMEKIT_CHARACTERISTIC(NAME, "Occupancy Sensor"),
-          &occupancy_detected,
+          &motion_detected,
           NULL
       }),
       NULL

@@ -7,6 +7,7 @@ EXTRA_COMPONENTS = \
   extras/i2c \
   extras/bh1750 \
   $(abspath ../../components/common/button) \
+  $(abspath ../../components/common/ota-api) \
 	$(abspath ../../components/esp8266-open-rtos/wifi_config) \
 	$(abspath ../../components/esp8266-open-rtos/cJSON) \
 	$(abspath ../../components/common/wolfssl) \

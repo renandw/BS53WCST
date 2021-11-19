@@ -149,7 +149,7 @@ void gpio_init() {
     gpio_enable(relay_gpio_2, GPIO_OUTPUT);
     relay_write_2(lightbulb_on_2.value.bool_value);
 
-    gpio_enable(relay_gpio_2, GPIO_OUTPUT);
+    gpio_enable(relay_gpio_3, GPIO_OUTPUT);
     relay_write_3(lightbulb_on_3.value.bool_value);
 
     gpio_enable(TOGGLE_PIN_1, GPIO_INPUT);

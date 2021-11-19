@@ -52,16 +52,16 @@ const int relay_gpio_3 = 3;
 #error TOGGLE_PIN_1 is not specified
 #endif
 
-#define TOGGLE_PIN_2 14 //also pin to reset if before 30 seconds
+#define TOGGLE_PIN_2 14
 #ifndef TOGGLE_PIN_2
 #error TOGGLE_PIN_2 is not specified
 #endif
 
 
 //HOMEKIT CHARACTERISTIC SECTION
-homekit_characteristic_t motion_detected = HOMEKIT_CHARACTERISTIC_(MOTION_DETECTED, 0);
-homekit_characteristic_t motion_detected_2 = HOMEKIT_CHARACTERISTIC_(MOTION_DETECTED, 0);
-homekit_characteristic_t lux = HOMEKIT_CHARACTERISTIC_(CURRENT_AMBIENT_LIGHT_LEVEL, 0, .min_step = (float[]) {0.01}, .min_value = (float[]) {0}, .max_value = (float[]) {100000}); //
+homekit_characteristic_t occupancy_detected = HOMEKIT_CHARACTERISTIC_(OCCUPANCY_DETECTED, 0);
+homekit_characteristic_t occupancy_detected_2 = HOMEKIT_CHARACTERISTIC_(OCCUPANCY_DETECTED, 0);
+homekit_characteristic_t lux = HOMEKIT_CHARACTERISTIC_(CURRENT_AMBIENT_LIGHT_LEVEL, 0, .min_step = (float[]) {0.01}, .min_value = (float[]) {0}, .max_value = (float[]) {100000}); // 
 homekit_characteristic_t fault = HOMEKIT_CHARACTERISTIC_(STATUS_FAULT, 0);
 homekit_characteristic_t ota_trigger  = API_OTA_TRIGGER;
 homekit_characteristic_t manufacturer = HOMEKIT_CHARACTERISTIC_(MANUFACTURER,  "X");
@@ -102,8 +102,8 @@ void reset_configuration() {
 void sensor_identify(homekit_value_t _value) {
     printf("LightSensor identify\n");
 }
-void motion_identify(homekit_value_t _value) {
-    printf("Motion identify\n");
+void occupancy_identify(homekit_value_t _value) {
+    printf("Occupancy identify\n");
 }
 void light_identify(homekit_value_t _value) {
     printf("Light identify\n");
@@ -140,9 +140,8 @@ homekit_characteristic_t lightbulb_on_3 = HOMEKIT_CHARACTERISTIC_(
     ON, true, .callback=HOMEKIT_CHARACTERISTIC_CALLBACK(lightbulb_on_3_callback)
 );
 
-
 void gpio_init() {
-
+  
     gpio_enable(relay_gpio_1, GPIO_OUTPUT);
     relay_write_1(lightbulb_on_1.value.bool_value);
 
@@ -179,9 +178,9 @@ void toggle_callback_1(bool high, void *context) {
 
 void toggle_callback_2(bool high, void *context) {
     printf("toggle is %s\n", high ? "high" : "low");
-    lightbulb_on_3.value.bool_value = !lightbulb_on_3.value.bool_value;
-    relay_write_3(lightbulb_on_3.value.bool_value);
-    homekit_characteristic_notify(&lightbulb_on_3, lightbulb_on_3.value);
+    lightbulb_on_2.value.bool_value = !lightbulb_on_2.value.bool_value;
+    relay_write_2(lightbulb_on_2.value.bool_value);
+    homekit_characteristic_notify(&lightbulb_on_2, lightbulb_on_2.value);
     reset_configuration();
 }
 
@@ -210,13 +209,13 @@ void sensor_init() {
 //OCCUPANCY SENSOR SECTION
 
 void sensor_callback(bool high, void *context) {
-    motion_detected.value = HOMEKIT_BOOL(high ? 1 : 0);
-    homekit_characteristic_notify(&motion_detected, motion_detected.value);
+    occupancy_detected.value = HOMEKIT_UINT8(high ? 1 : 0);
+    homekit_characteristic_notify(&occupancy_detected, occupancy_detected.value);
 }
 
 void sensor_callback_2(bool high, void *context) {
-    motion_detected_2.value = HOMEKIT_BOOL(high ? 1 : 0);
-    homekit_characteristic_notify(&motion_detected_2, motion_detected_2.value);
+    occupancy_detected_2.value = HOMEKIT_UINT8(high ? 1 : 0);
+    homekit_characteristic_notify(&occupancy_detected_2, occupancy_detected_2.value);
 }
 
 
@@ -238,7 +237,7 @@ homekit_accessory_t *accessories[] = {
     }),
 
     HOMEKIT_SERVICE(LIGHTBULB, .primary=true, .characteristics=(homekit_characteristic_t*[]){
-       HOMEKIT_CHARACTERISTIC(NAME, "Lâmpada 1"),
+       HOMEKIT_CHARACTERISTIC(NAME, "Lâmpada 01"),
         &lightbulb_on_1,
         &ota_trigger,
         NULL
@@ -251,16 +250,16 @@ homekit_accessory_t *accessories[] = {
         .services=(homekit_service_t*[]){
           HOMEKIT_SERVICE(ACCESSORY_INFORMATION, .characteristics=(homekit_characteristic_t*[]){
             HOMEKIT_CHARACTERISTIC(IDENTIFY, light_identify),
-            HOMEKIT_CHARACTERISTIC(NAME, "Lâmpada 2"),
+            HOMEKIT_CHARACTERISTIC(NAME, "Lâmpada 02"),
             &manufacturer,
             &serial,
             &model,
             &revision,
             NULL
-      }),
+      }),  
 
       HOMEKIT_SERVICE(LIGHTBULB, .characteristics=(homekit_characteristic_t*[]){
-            HOMEKIT_CHARACTERISTIC(NAME, "Lâmpada 2"),
+            HOMEKIT_CHARACTERISTIC(NAME, "Lâmpada 02"), 
             &lightbulb_on_2,
             NULL
       }),
@@ -287,36 +286,37 @@ homekit_accessory_t *accessories[] = {
       }),
       NULL
   }),
-    HOMEKIT_ACCESSORY(.id=4, .category=homekit_accessory_category_switch, .services=(homekit_service_t*[]) {
+
+    HOMEKIT_ACCESSORY(.id=4, .category=homekit_accessory_category_sensor, .services=(homekit_service_t*[]) {
         HOMEKIT_SERVICE(ACCESSORY_INFORMATION, .characteristics=(homekit_characteristic_t*[]) {
             HOMEKIT_CHARACTERISTIC(NAME, "Occupancy Sensor_2"),
             &manufacturer,
             &serial,
             &model,
             &revision,
-            HOMEKIT_CHARACTERISTIC(IDENTIFY, motion_identify),
+            HOMEKIT_CHARACTERISTIC(IDENTIFY, occupancy_identify),
             NULL
-}),
-        HOMEKIT_SERVICE(MOTION_SENSOR, .characteristics=(homekit_characteristic_t*[]) {
+}),      
+        HOMEKIT_SERVICE(OCCUPANCY_SENSOR, .characteristics=(homekit_characteristic_t*[]) {
             HOMEKIT_CHARACTERISTIC(NAME, "Occupancy Sensor_2"),
-            &motion_detected_2,
+            &occupancy_detected_2,
             NULL
       }),
       NULL
   }),
-  HOMEKIT_ACCESSORY(.id=5, .category=homekit_accessory_category_switch, .services=(homekit_service_t*[]) {
+  HOMEKIT_ACCESSORY(.id=5, .category=homekit_accessory_category_sensor, .services=(homekit_service_t*[]) {
       HOMEKIT_SERVICE(ACCESSORY_INFORMATION, .characteristics=(homekit_characteristic_t*[]) {
           HOMEKIT_CHARACTERISTIC(NAME, "Occupancy Sensor"),
           &manufacturer,
           &serial,
           &model,
           &revision,
-          HOMEKIT_CHARACTERISTIC(IDENTIFY, motion_identify),
+          HOMEKIT_CHARACTERISTIC(IDENTIFY, occupancy_identify),
           NULL
 }),
-      HOMEKIT_SERVICE(MOTION_SENSOR, .characteristics=(homekit_characteristic_t*[]) {
+      HOMEKIT_SERVICE(OCCUPANCY_SENSOR, .characteristics=(homekit_characteristic_t*[]) {
           HOMEKIT_CHARACTERISTIC(NAME, "Occupancy Sensor"),
-          &motion_detected,
+          &occupancy_detected,
           NULL
       }),
       NULL
@@ -354,14 +354,14 @@ void create_accessory_name() {
     uint8_t macaddr[6];
     sdk_wifi_get_macaddr(STATION_IF, macaddr);
 
-    int name_len = snprintf(NULL, 0, "LuxRelayMotion-%02X%02X%02X",
+    int name_len = snprintf(NULL, 0, "LightSensor-%02X%02X%02X",
                             macaddr[3], macaddr[4], macaddr[5]);
     char *name_value = malloc(name_len+1);
-    snprintf(name_value, name_len+1, "LuxRelayMotion-%02X%02X%02X",
+    snprintf(name_value, name_len+1, "LightSensor-%02X%02X%02X",
              macaddr[3], macaddr[4], macaddr[5]);
 
     name.value = HOMEKIT_STRING(name_value);
-
+    
     char *serial_value = malloc(13);
     snprintf(serial_value, 13, "%02X%02X%02X%02X%02X%02X", macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5]);
     serial.value = HOMEKIT_STRING(serial_value);

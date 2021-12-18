@@ -45,6 +45,8 @@ const int relay_gpio_1 = 0;
 const int relay_gpio_2 = 2;
 // The GPIO pin that is connected to RELAY#3 on the board.
 const int relay_gpio_3 = 12;
+// The GPIO pin that is connected to RELAY#4 on the board.
+const int relay_gpio_4 = 14;
 
 // The GPIO pin that is connected to the button1 on the Board.
 #define BUTTON_PIN 3
@@ -109,6 +111,7 @@ void light_identify(homekit_value_t _value) {
 void lightbulb_on_1_callback(homekit_characteristic_t *_ch, homekit_value_t on, void *context);
 void lightbulb_on_2_callback(homekit_characteristic_t *_ch, homekit_value_t on, void *context);
 void lightbulb_on_3_callback(homekit_characteristic_t *_ch, homekit_value_t on, void *context);
+void lightbulb_on_4_callback(homekit_characteristic_t *_ch, homekit_value_t on, void *context);
 
 
 void relay_write_1(bool on) {
@@ -123,6 +126,10 @@ void relay_write_3(bool on) {
     gpio_write(relay_gpio_3, on ? 0 : 1);
 }
 
+void relay_write_4(bool on) {
+    gpio_write(relay_gpio_4, on ? 0 : 1);
+}
+
 homekit_characteristic_t lightbulb_on_1 = HOMEKIT_CHARACTERISTIC_(
     ON, false, .callback=HOMEKIT_CHARACTERISTIC_CALLBACK(lightbulb_on_1_callback)
 );
@@ -135,6 +142,10 @@ homekit_characteristic_t lightbulb_on_3 = HOMEKIT_CHARACTERISTIC_(
     ON, false, .callback=HOMEKIT_CHARACTERISTIC_CALLBACK(lightbulb_on_3_callback)
 );
 
+homekit_characteristic_t lightbulb_on_4 = HOMEKIT_CHARACTERISTIC_(
+    ON, false, .callback=HOMEKIT_CHARACTERISTIC_CALLBACK(lightbulb_on_4_callback)
+);
+
 void gpio_init() {
 
     gpio_enable(relay_gpio_1, GPIO_OUTPUT);
@@ -145,6 +156,9 @@ void gpio_init() {
 
     gpio_enable(relay_gpio_3, GPIO_OUTPUT);
     relay_write_3(lightbulb_on_3.value.bool_value);
+
+    gpio_enable(relay_gpio_4, GPIO_OUTPUT);
+    relay_write_4(lightbulb_on_4.value.bool_value);
 
     gpio_enable(BUTTON_PIN, GPIO_INPUT);
 }
@@ -159,6 +173,10 @@ void lightbulb_on_2_callback(homekit_characteristic_t *_ch, homekit_value_t on, 
 
 void lightbulb_on_3_callback(homekit_characteristic_t *_ch, homekit_value_t on, void *context) {
     relay_write_3(lightbulb_on_3.value.bool_value);
+}
+
+void lightbulb_on_4_callback(homekit_characteristic_t *_ch, homekit_value_t on, void *context) {
+    relay_write_4(lightbulb_on_4.value.bool_value);
 }
 
 //TOGGLE CALLBACKS
@@ -184,6 +202,9 @@ void button_callback(button_event_t event, void* context) {
           break;
         case button_event_long_press:
           printf("LONG PRESS\n");
+          lightbulb_on_4.value.bool_value = !lightbulb_on_4.value.bool_value;
+          relay_write_4(lightbulb_on_4.value.bool_value);
+          homekit_characteristic_notify(&lightbulb_on_4, lightbulb_on_4.value);
           reset_configuration();
           break;
         default:
@@ -258,7 +279,7 @@ homekit_accessory_t *accessories[] = {
         .services=(homekit_service_t*[]){
           HOMEKIT_SERVICE(ACCESSORY_INFORMATION, .characteristics=(homekit_characteristic_t*[]){
             HOMEKIT_CHARACTERISTIC(IDENTIFY, light_identify),
-            HOMEKIT_CHARACTERISTIC(NAME, "Lâmpada 02"),
+            HOMEKIT_CHARACTERISTIC(NAME, "Lâmpada 2"),
             &manufacturer,
             &serial,
             &model,
@@ -267,7 +288,7 @@ homekit_accessory_t *accessories[] = {
       }),
 
       HOMEKIT_SERVICE(LIGHTBULB, .characteristics=(homekit_characteristic_t*[]){
-            HOMEKIT_CHARACTERISTIC(NAME, "Lâmpada 02"),
+            HOMEKIT_CHARACTERISTIC(NAME, "Lâmpada 2"),
             &lightbulb_on_2,
             NULL
       }),
@@ -294,8 +315,29 @@ homekit_accessory_t *accessories[] = {
       }),
       NULL
   }),
+  HOMEKIT_ACCESSORY(
+      .id=4,
+      .category=homekit_accessory_category_switch,
+      .services=(homekit_service_t*[]){
+        HOMEKIT_SERVICE(ACCESSORY_INFORMATION, .characteristics=(homekit_characteristic_t*[]){
+          HOMEKIT_CHARACTERISTIC(IDENTIFY, light_identify),
+          HOMEKIT_CHARACTERISTIC(NAME, "Lâmpada 4"),
+          &manufacturer,
+          &serial,
+          &model,
+          &revision,
+          NULL
+    }),
 
-    HOMEKIT_ACCESSORY(.id=4, .category=homekit_accessory_category_sensor, .services=(homekit_service_t*[]) {
+    HOMEKIT_SERVICE(LIGHTBULB, .characteristics=(homekit_characteristic_t*[]){
+          HOMEKIT_CHARACTERISTIC(NAME, "Lâmpada 4"),
+          &lightbulb_on_4,
+          NULL
+    }),
+    NULL
+}),
+
+    HOMEKIT_ACCESSORY(.id=5, .category=homekit_accessory_category_sensor, .services=(homekit_service_t*[]) {
         HOMEKIT_SERVICE(ACCESSORY_INFORMATION, .characteristics=(homekit_characteristic_t*[]) {
             HOMEKIT_CHARACTERISTIC(NAME, "Occupancy Sensor_2"),
             &manufacturer,
@@ -312,7 +354,7 @@ homekit_accessory_t *accessories[] = {
       }),
       NULL
   }),
-  HOMEKIT_ACCESSORY(.id=5, .category=homekit_accessory_category_sensor, .services=(homekit_service_t*[]) {
+  HOMEKIT_ACCESSORY(.id=6, .category=homekit_accessory_category_sensor, .services=(homekit_service_t*[]) {
       HOMEKIT_SERVICE(ACCESSORY_INFORMATION, .characteristics=(homekit_characteristic_t*[]) {
           HOMEKIT_CHARACTERISTIC(NAME, "Occupancy Sensor"),
           &manufacturer,
@@ -330,7 +372,7 @@ homekit_accessory_t *accessories[] = {
       NULL
 }),
 
-      HOMEKIT_ACCESSORY(.id=6, .category=homekit_accessory_category_sensor, .services=(homekit_service_t*[]) {
+      HOMEKIT_ACCESSORY(.id=7, .category=homekit_accessory_category_sensor, .services=(homekit_service_t*[]) {
           HOMEKIT_SERVICE(ACCESSORY_INFORMATION, .characteristics=(homekit_characteristic_t*[]) {
               HOMEKIT_CHARACTERISTIC(NAME, "Ambient Light Sensor"),
               &manufacturer,

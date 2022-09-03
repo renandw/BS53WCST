@@ -26,16 +26,16 @@
 
 #define ALLOWED_FACTORY_RESET_TIME 30000
 
-//OCCUPANCY SENSORS PINS
-//Sensor PIN
-#define SENSOR_PIN 13
-#ifndef SENSOR_PIN
-#error SENSOR_PIN is not specified
+//TOGGLE PINS
+//TOGGLE PIN
+#define TOGGLE_PIN 13
+#ifndef TOGGLE_PIN
+#error TOGGLE_PIN is not specified
 #endif
-//Sensor PIN 2
-#define SENSOR_PIN_2 16
-#ifndef SENSOR_PIN_2
-#error SENSOR_PIN_2 is not specified
+//TOGGLE PIN 2
+#define TOGGLE_PIN_2 14
+#ifndef TOGGLE_PIN_2
+#error TOGGLE_PIN_2 is not specified
 #endif
 
 //RELAYS PINS
@@ -46,18 +46,10 @@ const int relay_gpio_2 = 2;
 // The GPIO pin that is connected to RELAY#3 on the board.
 const int relay_gpio_3 = 12;
 // The GPIO pin that is connected to RELAY#4 on the board.
-const int relay_gpio_4 = 14;
-
-// The GPIO pin that is connected to the button1 on the Board.
-#define BUTTON_PIN 3
-#ifndef BUTTON_PIN
-#error BUTTON_PIN is not specified
-#endif
+const int relay_gpio_4 = 16;
 
 
 //HOMEKIT CHARACTERISTIC SECTION
-homekit_characteristic_t occupancy_detected = HOMEKIT_CHARACTERISTIC_(OCCUPANCY_DETECTED, 0);
-homekit_characteristic_t occupancy_detected_2 = HOMEKIT_CHARACTERISTIC_(OCCUPANCY_DETECTED, 0);
 homekit_characteristic_t lux = HOMEKIT_CHARACTERISTIC_(CURRENT_AMBIENT_LIGHT_LEVEL, 0, .min_step = (float[]) {0.01}, .min_value = (float[]) {0}, .max_value = (float[]) {100000}); //
 homekit_characteristic_t fault = HOMEKIT_CHARACTERISTIC_(STATUS_FAULT, 0);
 homekit_characteristic_t ota_trigger  = API_OTA_TRIGGER;
@@ -98,9 +90,6 @@ void reset_configuration() {
 //ACCESSORIES IDENTIFY
 void sensor_identify(homekit_value_t _value) {
     printf("LightSensor identify\n");
-}
-void occupancy_identify(homekit_value_t _value) {
-    printf("Occupancy identify\n");
 }
 void light_identify(homekit_value_t _value) {
     printf("Light identify\n");
@@ -160,7 +149,8 @@ void gpio_init() {
     gpio_enable(relay_gpio_4, GPIO_OUTPUT);
     relay_write_4(lightbulb_on_4.value.bool_value);
 
-    gpio_enable(BUTTON_PIN, GPIO_INPUT);
+    gpio_enable(TOGGLE_PIN, GPIO_INPUT);
+    gpio_enable(TOGGLE_PIN_2, GPIO_INPUT);
 }
 
 void lightbulb_on_1_callback(homekit_characteristic_t *_ch, homekit_value_t on, void *context) {
@@ -180,36 +170,19 @@ void lightbulb_on_4_callback(homekit_characteristic_t *_ch, homekit_value_t on, 
 }
 
 //TOGGLE CALLBACKS
-void button_callback(button_event_t event, void* context) {
-    switch (event) {
-        case button_event_single_press:
-          printf("SINGLE PRESS\n");
-          lightbulb_on_1.value.bool_value = !lightbulb_on_1.value.bool_value;
-          relay_write_1(lightbulb_on_1.value.bool_value);
-          homekit_characteristic_notify(&lightbulb_on_1, lightbulb_on_1.value);
-          break;
-        case button_event_double_press:
-          printf("DOUBLE PRESS\n");
-          lightbulb_on_2.value.bool_value = !lightbulb_on_2.value.bool_value;
-          relay_write_2(lightbulb_on_2.value.bool_value);
-          homekit_characteristic_notify(&lightbulb_on_2, lightbulb_on_2.value);
-          break;
-        case button_event_tripple_press:
-          printf("TRIPPLE PRESS\n");
-          lightbulb_on_3.value.bool_value = !lightbulb_on_3.value.bool_value;
-          relay_write_3(lightbulb_on_3.value.bool_value);
-          homekit_characteristic_notify(&lightbulb_on_3, lightbulb_on_3.value);
-          break;
-        case button_event_long_press:
-          printf("LONG PRESS\n");
-          lightbulb_on_4.value.bool_value = !lightbulb_on_4.value.bool_value;
-          relay_write_4(lightbulb_on_4.value.bool_value);
-          homekit_characteristic_notify(&lightbulb_on_4, lightbulb_on_4.value);
-          reset_configuration();
-          break;
-        default:
-            printf("Unknown button event: %d\n", event);
-    }
+void toggle_callback(bool high, void *context) {
+        printf("toggle is %s\n", high ? "high" : "low");
+        lightbulb_on_1.value.bool_value = !lightbulb_on_1.value.bool_value;
+        relay_write_1(lightbulb_on_1.value.bool_value);
+        homekit_characteristic_notify(&lightbulb_on_1, lightbulb_on_1.value);
+}
+
+void toggle_callback_2(bool high, void *context) {
+        printf("toggle is %s\n", high ? "high" : "low");
+        lightbulb_on_2.value.bool_value = !lightbulb_on_2.value.bool_value;
+        relay_write_2(lightbulb_on_2.value.bool_value);
+        homekit_characteristic_notify(&lightbulb_on_2, lightbulb_on_2.value);
+        reset_configuration();
 }
 
 
@@ -234,20 +207,6 @@ void sensor_init() {
     xTaskCreate(sensor_task, "Sensor Task", 256, NULL, 2, NULL);
     i2c_init(I2C_BUS, SCL_PIN, SDA_PIN, I2C_FREQ_100K);
 }
-
-//OCCUPANCY SENSOR SECTION
-
-void sensor_callback(bool high, void *context) {
-    occupancy_detected.value = HOMEKIT_UINT8(high ? 1 : 0);
-    homekit_characteristic_notify(&occupancy_detected, occupancy_detected.value);
-}
-
-void sensor_callback_2(bool high, void *context) {
-    occupancy_detected_2.value = HOMEKIT_UINT8(high ? 1 : 0);
-    homekit_characteristic_notify(&occupancy_detected_2, occupancy_detected_2.value);
-}
-
-
 
 //HOMEKIT ACCESSORIES SECTION
 homekit_accessory_t *accessories[] = {
@@ -337,42 +296,7 @@ homekit_accessory_t *accessories[] = {
     NULL
 }),
 
-    HOMEKIT_ACCESSORY(.id=5, .category=homekit_accessory_category_sensor, .services=(homekit_service_t*[]) {
-        HOMEKIT_SERVICE(ACCESSORY_INFORMATION, .characteristics=(homekit_characteristic_t*[]) {
-            HOMEKIT_CHARACTERISTIC(NAME, "Occupancy Sensor_2"),
-            &manufacturer,
-            &serial,
-            &model,
-            &revision,
-            HOMEKIT_CHARACTERISTIC(IDENTIFY, occupancy_identify),
-            NULL
-}),
-        HOMEKIT_SERVICE(OCCUPANCY_SENSOR, .characteristics=(homekit_characteristic_t*[]) {
-            HOMEKIT_CHARACTERISTIC(NAME, "Occupancy Sensor_2"),
-            &occupancy_detected_2,
-            NULL
-      }),
-      NULL
-  }),
-  HOMEKIT_ACCESSORY(.id=6, .category=homekit_accessory_category_sensor, .services=(homekit_service_t*[]) {
-      HOMEKIT_SERVICE(ACCESSORY_INFORMATION, .characteristics=(homekit_characteristic_t*[]) {
-          HOMEKIT_CHARACTERISTIC(NAME, "Occupancy Sensor"),
-          &manufacturer,
-          &serial,
-          &model,
-          &revision,
-          HOMEKIT_CHARACTERISTIC(IDENTIFY, occupancy_identify),
-          NULL
-}),
-      HOMEKIT_SERVICE(OCCUPANCY_SENSOR, .characteristics=(homekit_characteristic_t*[]) {
-          HOMEKIT_CHARACTERISTIC(NAME, "Occupancy Sensor"),
-          &occupancy_detected,
-          NULL
-      }),
-      NULL
-}),
-
-      HOMEKIT_ACCESSORY(.id=7, .category=homekit_accessory_category_sensor, .services=(homekit_service_t*[]) {
+      HOMEKIT_ACCESSORY(.id=5, .category=homekit_accessory_category_sensor, .services=(homekit_service_t*[]) {
           HOMEKIT_SERVICE(ACCESSORY_INFORMATION, .characteristics=(homekit_characteristic_t*[]) {
               HOMEKIT_CHARACTERISTIC(NAME, "Ambient Light Sensor"),
               &manufacturer,
@@ -435,20 +359,11 @@ void user_init(void) {
     config.accessories[0]->config_number=c_hash;
     homekit_server_init(&config);
 
-    button_config_t config = BUTTON_CONFIG(
-    button_active_low,
-    .long_press_time = 3000,
-    .max_repeat_presses = 3,
-    );
 
-
-    if (button_create(BUTTON_PIN, config, button_callback, NULL)) {
-        printf("Failed to initialize button\n");
-    }
-    if (toggle_create(SENSOR_PIN, sensor_callback, NULL)) {
+    if (toggle_create(TOGGLE_PIN, toggle_callback, NULL)) {
     printf("Failed to initialize sensor\n");
     }
-    if (toggle_create(SENSOR_PIN_2, sensor_callback_2, NULL)) {
+    if (toggle_create(TOGGLE_PIN_2, toggle_callback_2, NULL)) {
     printf("Failed to initialize sensor\n");
     }
 
